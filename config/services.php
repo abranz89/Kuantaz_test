@@ -31,4 +31,8 @@ return [
         ],
     ],
 
+    'kuantaz' => [
+        'api_url' => env('KUANTAZ_API_URL'),
+    ]
+
 ];

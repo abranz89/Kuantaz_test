@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use App\Services\KuantazService;
 use Carbon\Carbon;
+
 
 class KuantazController extends Controller
 {
@@ -14,38 +15,49 @@ class KuantazController extends Controller
      */
     public function index()
     {
-        $response = Http::get('https://run.mocky.io/v3/399b4ce1-5f6e-4983-a9e8-e3fa39e1ea71');
-        $beneficios = collect($response['data']);
+        try {
 
-        $response = Http::get('https://run.mocky.io/v3/06b8dd68-7d6d-4857-85ff-b58e204acbf4');
-        $filtros = collect($response['data']);
+            // Se Crea una instancia del servicio KuantazService para obtener los datos de beneficios, filtros y fichas.
+            $kuantazService = new KuantazService();
 
-        $response = Http::get('https://run.mocky.io/v3/c7a4777f-e383-4122-8a89-70f29a6830c0');
-        $fichas = collect($response['data']);
+             // Se Obtienen los datos de beneficios, filtros y fichas del servicio Kuantaz.
+            $beneficios = $kuantazService->getBeneficios();
+            $filtros = $kuantazService->getFiltros();
+            $fichas = $kuantazService->getFichas();
 
-        $beneficiosConRelacion = $beneficios->filter(function ($beneficio) use ($filtros) {
-            $filtro = $filtros->firstWhere('id_programa', $beneficio['id_programa']);
-            return $beneficio['monto'] >= $filtro['min'] && $beneficio['monto'] <= $filtro['max'];
-        })
-        ->map(function ($beneficio) use ($filtros, $fichas) {
-            $filtro = $filtros->firstWhere('id_programa', $beneficio['id_programa']);
-            $ficha = $fichas->firstWhere('id_programa', $beneficio['id_programa']);
-            $anio = Carbon::parse($beneficio['fecha_recepcion'])->format('Y');
-            return array_merge($beneficio, ['ano' => $anio, 'view' => true, 'ficha' => $ficha]);
-        })
-        ->groupBy('ano')
-        ->map(function ($beneficiosPorAnio) {
-            return [
-                'year' => $beneficiosPorAnio->first()['ano'],
-                'num' => $beneficiosPorAnio->count(),
-                'total' => $beneficiosPorAnio->sum('monto'),
-                'beneficios' => $beneficiosPorAnio
-            ];
-        })
-        ->sortKeysDesc()
-        ->values();
+            // Filtrando los beneficios para garantizar que el monto esté dentro del rango especificado en los filtros.
+            $beneficiosConRelacion = $beneficios->filter(function ($beneficio) use ($filtros) {
+                $filtro = $filtros->firstWhere('id_programa', $beneficio['id_programa']);
+                return $beneficio['monto'] >= $filtro['min'] && $beneficio['monto'] <= $filtro['max'];
+            })
+            // Mapeando los beneficios para agregar información adicional, como el año de recepción, la ficha correspondiente y la vista (que se establece como `true`).
+            ->map(function ($beneficio) use ($filtros, $fichas) {
+                $filtro = $filtros->firstWhere('id_programa', $beneficio['id_programa']);
+                $ficha = $fichas->firstWhere('id_programa', $beneficio['id_programa']);
+                $anio = Carbon::parse($beneficio['fecha_recepcion'])->format('Y');
+                return array_merge($beneficio, ['ano' => $anio, 'view' => true, 'ficha' => $ficha]);
+            })
+            // Agrupando los beneficios por año
+            ->groupBy('ano')
+            // Mapeando y resumiendo los beneficios para cada año.
+            ->map(function ($beneficiosPorAnio) {
+                return [
+                    'year' => $beneficiosPorAnio->first()['ano'],
+                    'num' => $beneficiosPorAnio->count(),
+                    'total' => $beneficiosPorAnio->sum('monto'),
+                    'beneficios' => $beneficiosPorAnio
+                ];
+            })
+            // Ordenando los resúmenes de los beneficios por año en orden descendente
+            ->sortKeysDesc()
+            ->values();
 
-        return $beneficiosConRelacion;
+            //Devolviendo los resúmenes de los beneficios por año como resultado final
+            return $beneficiosConRelacion;
+
+        } catch(\Exception $e){
+            return response()->json(['error' => 'No se pudieron obtener los datos.', 'mensaje' => $e->getMessage()], 500);
+        }
 
     }
 
