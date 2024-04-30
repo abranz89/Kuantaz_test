@@ -41,32 +41,30 @@ class KuantazController extends Controller
             $filtros = $kuantazService->getFiltros();
             $fichas = $kuantazService->getFichas();
 
-            // Filtrando los beneficios para garantizar que el monto esté dentro del rango especificado en los filtros.
-            $beneficiosConRelacion = $beneficios->filter(function ($beneficio) use ($filtros) {
+            $beneficiosConRelacion = $beneficios->filter(function ($beneficio) use ($filtros, $fichas) {
+                  // Filtra los beneficios para garantizar que el monto esté dentro del rango especificado en los filtros.
                 $filtro = $filtros->firstWhere('id_programa', $beneficio['id_programa']);
                 return $beneficio['monto'] >= $filtro['min'] && $beneficio['monto'] <= $filtro['max'];
-            })
-            // Mapeando los beneficios para agregar información adicional, como el año de recepción, la ficha correspondiente y la vista (que se establece como `true`).
-            ->map(function ($beneficio) use ($filtros, $fichas) {
+            })->transform(function ($beneficio) use ($filtros, $fichas) {
                 $filtro = $filtros->firstWhere('id_programa', $beneficio['id_programa']);
                 $ficha = $fichas->firstWhere('id_programa', $beneficio['id_programa']);
                 $anio = Carbon::parse($beneficio['fecha_recepcion'])->format('Y');
-                return array_merge($beneficio, ['ano' => $anio, 'view' => true, 'ficha' => $ficha]);
-            })
-            // Agrupando los beneficios por año
-            ->groupBy('ano')
-            // Mapeando y resumiendo los beneficios para cada año.
-            ->map(function ($beneficiosPorAnio) {
+                $beneficio['ano'] = $anio;
+                $beneficio['view'] = true;
+                $beneficio['ficha'] = $ficha;
+                return $beneficio;
+            })->groupBy(function ($beneficio) {
+                // Agrupa los beneficios por año.
+                return Carbon::parse($beneficio['fecha_recepcion'])->format('Y');
+            })->map(function ($beneficiosPorAnio, $anio) {
+                 // Resumen de los beneficios para cada año.
                 return [
-                    'year' => $beneficiosPorAnio->first()['ano'],
+                    'year' => $anio,
                     'num' => $beneficiosPorAnio->count(),
                     'total' => $beneficiosPorAnio->sum('monto'),
                     'beneficios' => $beneficiosPorAnio
                 ];
-            })
-            // Ordenando los resúmenes de los beneficios por año en orden descendente
-            ->sortKeysDesc()
-            ->values();
+            })->sortKeysDesc()->values();
 
             //Devolviendo los resúmenes de los beneficios por año como resultado final
             return $beneficiosConRelacion;
