@@ -51,3 +51,7 @@ Se han realizado pruebas unitarias y de funcionalidad para garantizar el correct
 
 ```bash
 php artisan test
+```
+
+## Documentación de la API
+Para acceder a la documentación de la API, visita [http://ejemplo.com/api/documentation](http://ejemplo.com/api/documentation).

@@ -7,11 +7,27 @@ use Illuminate\Http\Request;
 use App\Services\KuantazService;
 use Carbon\Carbon;
 
+/**
+ * @OA\Info(
+ *     title="API de Beneficios",
+ *     version="1.0.0",
+ *     description="API que proporciona información sobre beneficios ordenados por año.",
+ *     @OA\Contact(
+ *         email="abran_contreras@hotmail.com",
+ *         name="Abraham Contreras"
+ *     )
+ * )
+ */
 
 class KuantazController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/information",
+     *     summary="Obtiene la información de los beneficios",
+     *     tags={"Information"},
+     *     @OA\Response(response="200", description="Información de beneficios obtenida exitosamente")
+     * )
      */
     public function index()
     {

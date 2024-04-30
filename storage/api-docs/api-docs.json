@@ -1,0 +1,28 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API de Beneficios",
+        "description": "API que proporciona información sobre beneficios ordenados por año.",
+        "contact": {
+            "name": "Abraham Contreras",
+            "email": "abran_contreras@hotmail.com"
+        },
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/information": {
+            "get": {
+                "tags": [
+                    "Information"
+                ],
+                "summary": "Obtiene la información de los beneficios",
+                "operationId": "0aba87a6d6dd82cb879930c9e98aeee4",
+                "responses": {
+                    "200": {
+                        "description": "Información de beneficios obtenida exitosamente"
+                    }
+                }
+            }
+        }
+    }
+}
